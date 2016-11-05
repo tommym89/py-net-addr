@@ -84,11 +84,15 @@ class PyNetAddr(object):
                 str(int(cidr_bits[16:24], 2)), str(int(cidr_bits[24:], 2)) ]
         self.mask = '.'.join(cidr_bits_arr)
 
-    def within(self, network2):
-        if self.network == network2.network:
+    @staticmethod
+    def within(network1, network2):
+        if not isinstance(network1, PyNetAddr) or \
+                not isinstance(network2, PyNetAddr):
+            return False
+        if network1.network == network2.network:
             return True
-        network1_splitter = self.network.split('.')
-        mask1_splitter = self.mask.split('.')
+        network1_splitter = network1.network.split('.')
+        mask1_splitter = network1.mask.split('.')
         network2_splitter = network2.network.split('.')
         mask2_splitter = network2.mask.split('.')
         total1 = int(mask1_splitter[0]) + int(mask1_splitter[1]) \
@@ -96,21 +100,40 @@ class PyNetAddr(object):
         total2 = int(mask2_splitter[0]) + int(mask2_splitter[1]) \
                 + int(mask2_splitter[2]) + int(mask2_splitter[3])
         if total1 < total2:
-            netaddr3 = PyNetAddr(network2.network, self.mask)
-            print "Network 1 is: %s, network 2 with same subnet is: %s" % \
-                    (self.network, netaddr3.network)
-            if self.network == netaddr3.network:
+            netaddr3 = PyNetAddr(network2.network, network1.mask)
+            #print "Network 1 is: %s, network 2 with same subnet is: %s" % \
+                    #(network1.network, netaddr3.network)
+            if network1.network == netaddr3.network:
                 return True
         elif total2 < total1:
-            netaddr3 = PyNetAddr(self.network, network2.mask)
-            print "Network 2 is: %s, network 1 with same subnet is: %s" % \
-                    (network2.network, netaddr3.network)
+            netaddr3 = PyNetAddr(network1.network, network2.mask)
+            #print "Network 2 is: %s, network 1 with same subnet is: %s" % \
+                    #(network2.network, netaddr3.network)
             if network2.network == netaddr3.network:
                 return True
         return False
 
-    def summarize(self):
-        pass
+    @staticmethod
+    def summarize(subnets):
+        # make sure we've actually received a list of PyNetAddr objects
+        for sn in subnets:
+            if not isinstance(sn, PyNetAddr):
+                subnets.remove(sn)
+        if len(subnets) == 0:
+            return False
+        sorted_nets = sorted(subnets, key=lambda sn: sn.cidr_mask)
+        summarized = set()
+        while len(sorted_nets) > 0:
+            tmp_net = sorted_nets.pop()
+            found = False
+            for sn in sorted_nets:
+                if PyNetAddr.within(tmp_net, sn):
+                    summarized.add(sn)
+                    found = True
+                    break
+            if not found:
+                summarized.add(tmp_net)
+        return sorted(summarized, key=lambda sn: sn.cidr_mask)
 
     def set_new(self, address, mask):
         if self.is_valid_addr(address):
@@ -120,6 +143,7 @@ class PyNetAddr(object):
             return False
         if self.is_valid_mask(mask):
             self.mask = mask
+            self.calc_cidr_mask(self.mask)
         else:
             print "Error, invalid subnet mask!"
             return False
