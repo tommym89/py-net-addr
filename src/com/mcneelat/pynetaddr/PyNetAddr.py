@@ -25,12 +25,14 @@ class PyNetAddr(object):
         return False
 
     def is_valid_mask(self, mask):
-        # TODO: check for next octet as <= current
         if re.search(PyNetAddr.ip_re, mask):
             splitter = mask.split('.')
-            for tmp_s in splitter:
-                tmp_i = int(tmp_s)
+            for i in range(0,len(splitter)):
+                tmp_i = int(splitter[i])
                 if tmp_i not in PyNetAddr.mask_values:
+                    return False
+                # check for next octet as <= current
+                if i > 0 and tmp_i > int(splitter[i-1]):
                     return False
             self.calc_cidr_mask(mask)
             return True
@@ -133,7 +135,7 @@ class PyNetAddr(object):
                     break
             if not found:
                 summarized.add(tmp_net)
-        return sorted(summarized, key=lambda sn: sn.cidr_mask)
+        return sorted(summarized, key=lambda sn: "%s/%s" % (sn.cidr_mask, sn.network))
 
     def set_new(self, address, mask):
         if self.is_valid_addr(address):
