@@ -72,6 +72,9 @@ class PyNetAddr(object):
             i -= 1
         self.broadcast = '.'.join(network_splitter)
 
+    def calc_range(self):
+        self.range = self.network + " - "  + self.broadcast
+
     def calc_cidr_mask(self, mask):
         mask_splitter = mask.split('.')
         self.cidr_mask = 0
@@ -138,17 +141,20 @@ class PyNetAddr(object):
         return sorted(summarized, key=lambda sn: "%s/%s" % (sn.cidr_mask, sn.network))
 
     def set_new(self, address, mask):
-        if self.is_valid_addr(address):
-            self.address = address
+        if self.is_valid_addr(address.split("/")[0]):
+            self.address = address.split("/")[0]
         else:
             print "Error, invalid IP address!"
             return False
+        if mask == None:
+            self.calc_full_mask(int(address.split("/")[1]))
+            mask = self.mask
         if self.is_valid_mask(mask):
             self.mask = mask
-            self.calc_cidr_mask(self.mask)
         else:
             print "Error, invalid subnet mask!"
             return False
         self.calc_network()
         self.calc_broadcast()
+        self.calc_range()
         return True

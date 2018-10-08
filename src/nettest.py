@@ -28,4 +28,4 @@ summarized_subnets = PyNetAddr.summarize(subnets_list)
 
 print "\nSummarized list:\n"
 for sn in summarized_subnets:
-    print "%s/%s" % (sn.network, sn.cidr_mask)
+    print "%s/%s = %s" % (sn.network, sn.cidr_mask, sn.range)
