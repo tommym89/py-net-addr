@@ -7,6 +7,7 @@ class PyNetAddr(object):
 
     ip_re = r'^([0-9]{1,3}\.){3}[0-9]{1,3}$'
     mask_values = [0, 128, 192, 224, 240, 248, 252, 254, 255]
+    format_string = '{fill}{width}b'
 
     def __init__(self, address, mask):
         if not self.set_new(address, mask):
@@ -54,9 +55,9 @@ class PyNetAddr(object):
         breaker = False
         while i >= 0 and not breaker:
             network_octet = format(int(str(bin(int(network_splitter[i])))[2:], 2), \
-                    '{fill}{width}b'.format(width=8, fill=0))
+                    self.format_string.format(width=8, fill=0))
             mask_octet = format(int(str(bin(int(mask_splitter[i])))[2:], 2), \
-                    '{fill}{width}b'.format(width=8, fill=0))
+                    self.format_string.format(width=8, fill=0))
             
             j = len(mask_octet) - 1
             tmp_octet = list(network_octet)
@@ -80,7 +81,7 @@ class PyNetAddr(object):
         self.cidr_mask = 0
         for i in range(0, len(mask_splitter)):
             mask_octet = format(int(str(bin(int(mask_splitter[i])))[2:], 2), \
-                    '{fill}{width}b'.format(width=8, fill=0))
+                    self.format_string.format(width=8, fill=0))
             self.cidr_mask += mask_octet.count('1')
 
     def calc_full_mask(self, cidr_mask):
@@ -96,9 +97,7 @@ class PyNetAddr(object):
             return False
         if network1.network == network2.network:
             return True
-        network1_splitter = network1.network.split('.')
         mask1_splitter = network1.mask.split('.')
-        network2_splitter = network2.network.split('.')
         mask2_splitter = network2.mask.split('.')
         total1 = int(mask1_splitter[0]) + int(mask1_splitter[1]) \
                 + int(mask1_splitter[2]) + int(mask1_splitter[3])
@@ -144,7 +143,7 @@ class PyNetAddr(object):
         if self.is_valid_addr(address.split("/")[0]):
             self.address = address.split("/")[0]
         else:
-            print "Error, invalid IP address!"
+            print("Error, invalid IP address!")
             return False
         if mask == None:
             self.calc_full_mask(int(address.split("/")[1]))
@@ -152,7 +151,7 @@ class PyNetAddr(object):
         if self.is_valid_mask(mask):
             self.mask = mask
         else:
-            print "Error, invalid subnet mask!"
+            print("Error, invalid subnet mask!")
             return False
         self.calc_network()
         self.calc_broadcast()
